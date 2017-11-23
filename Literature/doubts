@@ -1,0 +1,11 @@
+1.) In link based attention, how is the link matrix implemented?
+
+2.) Equation 8, what is the first alpha(t - 1)
+
+3.) Equation 8, how is the product of Link matrix with the alpha(t - 1) dimensionally correct?
+
+4.) alpha_t_link is used for computing zt and also for computing alpha_hybrid
+
+5.) how is the vocabulary calculated programmatically?
+
+
