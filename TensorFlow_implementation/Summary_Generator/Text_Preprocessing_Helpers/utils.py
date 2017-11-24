@@ -6,6 +6,7 @@
 import re
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+import numpy as np
 
 def prepare_input_data(table_file_path):
     '''
@@ -28,14 +29,19 @@ def prepare_input_data(table_file_path):
         element_list = line.rstrip("\n").split("\t")
         for element in element_list:
             pair = element.split(":")
-            if (pair[1] != "<none>"):
-                pair[0] = re.sub(r'[0-9]+', '', pair[0]).replace("_","")
-                pair[1] = pair[1].split(" ")
-                for word in pair[1]:
-                    temp_word = (pair[0] + " " + word)
-                    temp.append(temp_word)
-                    content_words.append(word)
-                    field_words.append(pair[0])
+
+            '''
+                small modification from Animesh:
+                don't filter out the <none> pairs. Use all the data
+            '''
+
+            pair[0] = re.sub(r'[0-9]+', '', pair[0]).replace("_","")
+            pair[1] = pair[1].split(" ")
+            for word in pair[1]:
+                temp_word = (pair[0] + " " + word)
+                temp.append(temp_word)
+                content_words.append(word)
+                field_words.append(pair[0])
         field_content_words.append(temp)
 
     # remove the repeating field names from the list
@@ -88,7 +94,7 @@ def prepare_tokenizer(words):
         words => the list of words to be tokenized
     '''
     # obtain a tokenizer
-    t = Tokenizer()
+    t = Tokenizer(filters = '') # don't let keras ignore any words
     t.fit_on_texts(words)
     field_dict = dict(); rev_field_dict = dict()
 
@@ -97,11 +103,45 @@ def prepare_tokenizer(words):
         rev_field_dict[key] = value
 
     vocab_size = len(t.word_index) + 1
-	#print (vocab_size)
+
+    ''' Small modification from Animesh
+        # also add the '<unk>' token to the dictionary at 0th position
+    '''
+    field_dict[0] = '<unk>'; rev_field_dict['<unk>'] = 0
+
+    #print (vocab_size)
 	# integer encode the documents
     encoded_docs = t.texts_to_sequences(words)
 
-    # pad documents to a max length of max_length words
-    padded_docs = pad_sequences(encoded_docs, maxlen=1, padding='post')
+    # print "debug: " + str(encoded_docs)
+
 	#print(padded_docs)
-    return padded_docs, field_dict,rev_field_dict, vocab_size
+    return np.array(encoded_docs), field_dict, rev_field_dict, vocab_size
+
+
+def group_tokenized_sequences(flat_seq, lengths):
+    '''
+        funtion to group the seqs together to original form after tokenization
+        implemented by Animesh
+        @param
+        flat_seq => flat list of words (in order)
+        lengths => list of lengths of each sequence in the dataset
+        @return => grouped_seq
+    '''
+
+    # check if the lengths and the field_seq and the content_seq lengths are compatible
+    assert sum(lengths) == len(flat_seq), "Lengths are not compatible"
+
+    # perform the grouping:
+    grouped_seqs = [] # initialize to empty list
+    for length in lengths:
+        count = 0; temp_grouped_seq = [] # initialize counter and storer list
+        while(count < length):
+            temp_grouped_seq.append(flat_seq.pop(0))
+            count += 1
+
+        # add the so contructed lists to the main groupings
+        grouped_seqs.append(temp_grouped_seq)
+
+    # finally return the so created lists
+    return grouped_seqs
