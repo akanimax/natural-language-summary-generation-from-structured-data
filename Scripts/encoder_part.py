@@ -19,18 +19,18 @@ import keras
 
 from fcn_bias import MyLayer_fcn_bias
 
-f = open('/home/nitin/Documents/NLP/sum_gen/train.box','r')
+f = open('../Data/train.box','r')
 
 #### Get the list of all field-content word pair from the input text..
 field_content_words = []
 field_words = []
-content_words = []                                                          
+content_words = []
 def prepare_data():
    for line in f.readlines():
       temp = []
       element_list = line.rstrip("\n").split("\t")
       for element in element_list:
-         pair = element.split(":") 
+         pair = element.split(":")
          if (pair[1] != "<none>"):
 	    pair[0] = re.sub(r'[0-9]+', '', pair[0]).replace("_","")
             pair[1] = pair[1].split(" ")
@@ -41,24 +41,33 @@ def prepare_data():
                field_words.append(pair[0])
       field_content_words.append(temp)
 
-prepare_data()                                                                                                                             
-#print ((field_content_words[0]))
-#print (len(field_content_words[0]))
-max_length = max([len(sample_pair) for sample_pair in field_content_words])
+prepare_data()
+#print("field_content_words: ", field_content_words[0])
+#print(len(field_content_words))
+max_length = max([len(sample_pair) for sample_pair in field_content_words]) # Remark from Animesh: sample_pair is a bit confusing.
 #print (max_length)
 f.close()
 
+# temporary correction:
+# remove repeating field words from the list
+# field_words = list(set(field_words))
+############################################
+
+#print content_words, len(content_words)
+#print field_words, len(field_words)
+
 
 ######## prepare dataset for labels..labels as a list of sentences
-file_nb =  open('/home/nitin/Documents/NLP/sum_gen/train.nb','r')
-num_sent = [] # info. of number of sentence per field-content pair. 
+file_nb =  open('../Data/train.nb','r')
+num_sent = [] # info. of number of sentence per field-content pair.
 for line in file_nb.readlines():
 	nb_id = int(line.rstrip("\n"))
-	num_sent.append(nb_id)	
+	num_sent.append(nb_id)
 num_sentence = 0
 for num in num_sent:
    num_sentence += num
-file_sent =  open('/home/nitin/Documents/NLP/sum_gen/train.sent','r')
+# print num_sentence
+file_sent =  open('../Data/train.sent','r')
 labels = [] # list of output sentences.
 labels_in = []
 for line in file_sent.readlines():
@@ -75,6 +84,7 @@ for i,num in enumerate(num_sent):
       train_sample.append(field_content_words[i])
       j += 1
 
+print train_sample
 
 # prepare tokenizer ,encoded sequence for field and content separately
 
@@ -158,7 +168,7 @@ def level_data_encoded(labels):
       word_list = sent.split(" ")
       for word in word_list[1:]:
          if (word in rev_level_dict):
-            temp.append(rev_level_dict[word]) 
+            temp.append(rev_level_dict[word])
          else:
             temp.append(0)
       encoded_level_data.append(temp)
@@ -187,13 +197,13 @@ def level_data_encoded_in(labels):
       temp.append(0)
       for word in word_list[1:]:
          if (word in rev_level_dict):
-            temp.append(rev_level_dict[word]) 
+            temp.append(rev_level_dict[word])
          else:
             temp.append(0)
       while (len(temp) < max_len_level_in):
          temp.append(0)
       encoded_level_data.append(temp)
-      
+
    return encoded_level_data
 
 
@@ -242,9 +252,9 @@ dec_dis_input = Input(shape=(max_len_level_in,),dtype = 'int32',name = 'dec_dis_
 # Embedding layer for yt-1
 x_dec_dis_input = Embedding(output_dim=dim_embedding,input_dim=vocab_size_level,input_length=max_len_level_in)(dec_dis_input)
 
-# feed this tensor to layer 
+# feed this tensor to layer
 field_mat = MyLayer_fcn_bias(dim_embedding)(x_dec_dis_input)
-print (field_mat)
+# print (field_mat)
 ########################
 #layer of dot product between field embeddings and field_mat
 field_weight = keras.layers.dot(inputs= [x_field,field_mat], axes=-1, normalize=False)
@@ -273,5 +283,6 @@ model.fit([train_field_data,train_content_data,level_encoded_in], decoder_target
           epochs=1,
           validation_split=0.2)
 
-
-
+# train_field_data => 23 x
+# train_content_data =>
+# level_encoded_in =>
