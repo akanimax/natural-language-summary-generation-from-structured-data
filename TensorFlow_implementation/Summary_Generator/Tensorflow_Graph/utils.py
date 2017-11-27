@@ -5,6 +5,19 @@
 
 import numpy as np
 
+# Obtain the sequence lengths for the given input field_encodings / content_encodings (To feed to the RNN encoder)
+def get_lengths(sequences):
+    '''
+        Function to obtain the lengths of the given encodings. This allows for variable length sequences in the
+        RNN encoder.
+        @param
+        sequences = [2d] list of integer encoded sequences, padded to the max_length of the batch
+
+        @return
+        lengths = [1d] list containing the lengths of the sequences
+    '''
+    return map(lambda x: len(x), sequences)
+
 
 def pad_sequences(seqs, pad_value = 0):
     '''
