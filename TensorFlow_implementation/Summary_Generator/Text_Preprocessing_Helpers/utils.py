@@ -7,6 +7,7 @@ import re
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 import numpy as np
+import os # for the metadata file creator function
 
 def prepare_input_data(table_file_path):
     '''
@@ -145,3 +146,26 @@ def group_tokenized_sequences(flat_seq, lengths):
 
     # finally return the so created lists
     return grouped_seqs
+
+
+# create a function to generate a file for the given dictionary in the .vocab format
+def create_dot_vocab(save_dict, path):
+    '''
+        Function for creating the Metadata file for the given vocab dict at the specified path
+
+        @params:
+        save_dict = the dictionary object used to create the metadata file
+        path = the path where this dictionary is to be saved
+
+        @return:
+        None
+    '''
+    if(os.path.isfile(path)):
+        print("The file already exists: ", path)
+
+    else:
+        with open(path, 'w') as metadatat_file:
+            for (_, value) in save_dict.items():
+                metadatat_file.write(value + "\n")
+        # print a message that the file has been generated after completion
+        print("The file has been created at: ", path)
