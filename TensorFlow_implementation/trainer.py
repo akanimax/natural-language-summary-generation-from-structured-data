@@ -59,7 +59,7 @@ lstm_cell_state_size = hidden_state_size = 500 # they are same (for now)
 
 
 
-''' Extract and setup the datat '''
+''' Extract and setup the data '''
 # Obtain the data:
 data = unPickleIt(plug_and_play_data_file)
 

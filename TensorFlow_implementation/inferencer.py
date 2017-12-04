@@ -34,7 +34,7 @@ train_percentage = 90
 
 
 
-''' Extract and setup the datat '''
+''' Extract and setup the data '''
 # Obtain the data:
 data = unPickleIt(plug_and_play_data_file)
 
