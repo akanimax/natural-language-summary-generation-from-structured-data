@@ -9,7 +9,7 @@ import tensorflow as tf
 
 # define the graph builder function:
 def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size, field_embedding_size,
-    content_label_embedding_size, lstm_cell_state_size, hidden_state_size):
+    content_label_embedding_size, lstm_cell_state_size, hidden_state_size, rev_content_label_dict):
     '''
         Function for building the graph for model 1:
         The architecture is same as defined in the base paper, except the copynet part
@@ -111,25 +111,20 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                                 )
         print("\tEncoded_vectors_bank for attention mechanism: ", encoded_input)
 
-
         # define the size parameter for the encoded_inputs
         encoded_inputs_embeddings_size = encoded_input.shape[-1]
-        print encoded_inputs_embeddings_size
+
+        print("\tFinal_state obtained from the last step of encoder: ", encoder_final_state)
 
 
-        # In[29]:
+        # ========================================================================
+        # | Step 4:
+        # ========================================================================
+
+        print("\nstep 4: defining the Attention Mechanism for the Model (The Dispatcher Module) ...")
 
 
-        print("Final_state obtained from the last step of encoder: ", encoder_final_state)
-
-
-        # step 4: define the Attention Mechanism for the Model <b>(The Dispatcher Module)</b>
-
-        # step 4.1: define the content based attention
-
-        # In[30]:
-
-
+        print("**step 4.1: defining the content based attention")
         with tf.variable_scope("Content_Based_Attention/trainable_weights"):
             '''
                 These weights and bias matrices must be compatible with the dimensions of the h_values and the f_values
@@ -154,9 +149,6 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
             b_f_summary = tf.summary.histogram("Content_based_attention/field_biases", b_f)
             W_c_summary = tf.summary.histogram("Content_based_attention/content_weights", W_c)
             b_c_summary = tf.summary.histogram("Content_based_attention/content_weights", b_c)
-
-
-        # In[31]:
 
 
         with tf.variable_scope("Content_Based_Attention"):
@@ -186,11 +178,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 return tf.nn.softmax(field_attention_values * hidden_attention_values, name="softmax")
 
 
-        # step 4.2: define the link based attention
-
-        # In[32]:
-
-
+        print("**step 4.2: defining the link based attention")
         with tf.variable_scope("Link_Based_Attention/trainable_weights"):
             '''
                 The dimensions of the Link_Matrix must be properly compatible with the field_vocab_size.
@@ -202,14 +190,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
             Link_Matrix_summary = tf.summary.histogram("Link_based_attention", Link_Matrix)
 
-
-        # In[33]:
-
-
-        print(Link_Matrix)
-
-
-        # In[34]:
+        print("\tThe Link Matrix used for this attention: ", Link_Matrix)
 
 
         # define the function for obtaining the link based attention values.
@@ -230,11 +211,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                                                    matrix_relevant_values, axis=1),name="softmax")
 
 
-        # step 4.3: define the hybrid attention
-
-        # In[35]:
-
-
+        print("**step 4.3: defining the hybrid attention")
         # define the hybrid of the content based and the link based attention
         with tf.variable_scope("Hybrid_attention/trainable_weights"):
             # for now, this is just the content_based attention:
@@ -243,9 +220,6 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                                          shape=(hidden_state_size + field_embedding_size + content_label_embedding_size, 1))
 
             Zt_weights_summary = tf.summary.histogram("Hybrid_attention/zt_weights", Zt_weights)
-
-
-        # In[36]:
 
 
         with tf.variable_scope("Hybrid_attention"):
@@ -273,10 +247,11 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 return hybrid_attention
 
 
-        # step 5: create the decoder RNN to obtain the generated summary for the structured data <b>(The Decoder Module)</b>
+        # ========================================================================
+        # | Step 5:
+        # ========================================================================
 
-        # In[37]:
-
+        print("\nstep 5: creating the decoder RNN to obtain the generated summary for the structured data (The Decoder Module) ...")
 
         with tf.variable_scope("Decoder/trainable_weights"):
                # define the weights for the output projection calculation
@@ -307,10 +282,6 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
                # create the LSTM cell to be used for decoding purposes
                decoder_cell = tf.nn.rnn_cell.LSTMCell(lstm_cell_state_size)
-
-
-        # In[38]:
-
 
         def decode(start_tokens, mode = "inference", decoder_lengths = None, w_reuse = True):
             '''
@@ -357,7 +328,6 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 def decoder_loop_function(time, cell_output, cell_state, loop_state):
                     '''
                         The decoder loop function for the raw_rnn
-                        (In future will implement the attention mechanism using the loop_state parameter.)
                         @params
                         compatible with -> https://www.tensorflow.org/api_docs/python/tf/nn/raw_rnn
                     '''
@@ -399,8 +369,13 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
 
                         ''' Calculate the finished vector for perfoming computations '''
-                        # for now it is just the decoder length completed or not value.
-                        finished = (time >= decoder_lengths)
+                        # define the fninshed parameter for the loop to determine whether to continue or not.
+                        if(mode == "training"):
+                            finished = (time >= decoder_lengths)
+
+                        elif(mode == "inference"):
+                            temp = tf.argmax(preds, axis=-1) # obtain the output predictions in encoded form
+                            finished = (temp == rev_content_label_dict['<eos>'])
 
                         ''' Copy mechanism is left (//TODO: change the following and implement copy mechanism)'''
                         emit_output = preds
@@ -423,27 +398,26 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
             return tf.transpose(outputs.stack(), perm=[1, 0, 2])
 
 
-        # step 6: define the training computations:
+        # ========================================================================
+        # | Step 6:
+        # ========================================================================
 
-        # In[39]:
-
+        print("\nstep 6: defining the training computations ...")
 
         with tf.name_scope("Training_computations"):
             outputs = decode(tf_label_embedded[:, 0, :], mode="training",
                              decoder_lengths=tf_label_seqs_lengths, w_reuse=None)
 
 
-        # In[40]:
-
-
         # print the outputs:
-        print("Output_tensor: ", outputs)
+        print("\tFinal Output_Tensor obtained from the decoder: ", outputs)
 
 
-        # step 7: define the cost function and the optimizer to perform the optimization on this graph.
+        # ========================================================================
+        # | Step 7:
+        # ========================================================================
 
-        # In[41]:
-
+        print("\nstep 7: defining the cost function for optimization ...")
 
         # define the loss (objective) function for minimization
         with tf.variable_scope("Loss"):
@@ -454,25 +428,57 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
             loss_summary = tf.summary.scalar("Objective_loss", loss)
 
 
-        # In[42]:
+        # ========================================================================
+        # | Step 8:
+        # ========================================================================
 
+        print("\nstep 8: defining the computations for the inference mode ...")
 
-        # # define the optimizer for this task:
-        # with tf.variable_scope("Trainer"):
-        #     optimizer = tf.train.AdamOptimizer(learning_rate)
-        #     # define the train_step for this:
-        #     train_step = optimizer.minimize(loss)
+        # define the computations for the inference mode
+        with tf.variable_scope("inference_computations"):
+            inf_outputs = decode(tf_label_embedded[:, 0, :])
 
+        print("\tInference outputs: ", inf_outputs)
 
-        # step _ : define the errands for the model
+        # ========================================================================
+        # | Step _:
+        # ========================================================================
 
-        # In[43]:
-
+        print("\nstep _ : setting up the errands for TensorFlow ...")
 
         with tf.variable_scope("Errands"):
-            init = tf.global_variables_initializer()
             all_summaries = tf.summary.merge_all()
 
+    print("=============================================================================================================\n\n")
 
-    # return the built graph object:
-    return graph
+    # Generate the interface dictionary object for this defined graph
+    interface_dict = {
+
+        # Tensors for input placeholders into the graph
+        "input": {
+            "field_encodings": tf_field_encodings,
+            "content_encodings": tf_content_encodings,
+            "label_encodings": tf_label_encodings,
+            "input_sequence_lengths": tf_input_seqs_lengths,
+            "label_sequence_lengths": tf_label_seqs_lengths
+        },
+
+        # Tensors for embedding matrices:
+        "field_embeddings": field_embedding_matrix,
+        "content_label_embeddings": content_label_embedding_matrix,
+
+        # Tensor for loass
+        "loss": loss,
+
+        # Tensor for the inference output:
+        "inference": inf_outputs,
+
+        # Tensor for training outputs
+        "training_output": outputs,
+
+        # Tensor for init and summary_ops
+        "summary": all_summaries
+    }
+
+    # return the built graph object and it's interface dictionary:
+    return graph, interface_dict
