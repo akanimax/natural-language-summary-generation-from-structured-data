@@ -382,8 +382,8 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
                         # The next_input is the x_t vector so calculated:
                         next_input = x_t
-                        # The next loop_state is the current hybrid_attention vectors
-                        next_loop_state = hybrid_attn
+                        # The next loop_state is the current content_based attention
+                        next_loop_state = cont_attn
                         # The next_cell_state is going to be equal to the cell_state. (we_don't tweak it)
                         next_cell_state = cell_state
 
