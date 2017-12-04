@@ -11,7 +11,6 @@ seed_value = 3
 np.random.seed(seed_value) # set this seed for a device independant consistent behaviour
 
 ''' Set the constants for the script '''
-
 # various paths of the files
 data_path = "../Data" # the data path
 
@@ -24,6 +23,21 @@ data_files_paths = {
 base_model_path = "Models"
 plug_and_play_data_file = os.path.join(data_path, "plug_and_play.pickle")
 
+
+
+
+
+
+
+''' Name of the model:  '''
+# This can be changed to create new models in the directory
+model_name = "Model_1"
+
+'''
+	=========================================================================================================
+	|| All Tweakable hyper-parameters
+	=========================================================================================================
+'''
 # constants for this script
 train_percentage = 90
 batch_size = 4
@@ -31,6 +45,21 @@ checkpoint_factor = 10
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
 
+# Embeddings size:
+field_embedding_size = 100
+content_label_embedding_size = 400 # This is a much bigger vocabulary compared to the field_name's vocabulary
+
+# LSTM hidden state sizes
+lstm_cell_state_size = hidden_state_size = 500 # they are same (for now)
+'''
+	=========================================================================================================
+'''
+
+
+
+
+
+''' Extract and setup the datat '''
 # Obtain the data:
 data = unPickleIt(plug_and_play_data_file)
 
@@ -43,6 +72,10 @@ label_encodings = data['label_encodings']
 content_label_dict = data['content_union_label_dict']
 rev_content_label_dict = data['rev_content_union_label_dict']
 
+# vocabulary sizes
+field_vocab_size = data['field_vocab_size']
+content_label_vocab_size = data['content_label_vocab_size']
+
 
 X, Y = synch_random_shuffle_non_np(zip(field_encodings, content_encodings), label_encodings)
 
@@ -53,18 +86,12 @@ train_X_field = list(train_X_field); train_X_content = list(train_X_content)
 # Free up the resources by deleting non required stuff
 del X, Y, field_encodings, content_encodings, train_X
 
-# vocabulary sizes
-field_vocab_size = data['field_vocab_size']
-content_label_vocab_size = data['content_label_vocab_size']
-
-# Embeddings size:
-field_embedding_size = 100
-content_label_embedding_size = 400 # This is a much bigger vocabulary compared to the field_name's vocabulary
-
-# LSTM hidden state sizes
-lstm_cell_state_size = hidden_state_size = 500 # they are same (for now)
 
 
+
+
+
+''' Obtain the TensorFlow graph of the order_planner_without_copynet Network'''
 # just execute the get_computation_graph function here:
 graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 	seed_value = seed_value,
@@ -75,7 +102,7 @@ graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 
 	# Embeddings size:
 	field_embedding_size = field_embedding_size,
-	content_label_embedding_size = content_label_embedding_size, # This is a much bigger vocabulary compared to the field_name's vocabulary
+	content_label_embedding_size = content_label_embedding_size,
 
 	# LSTM hidden state sizes
 	lstm_cell_state_size = lstm_cell_state_size,
@@ -83,9 +110,8 @@ graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 	rev_content_label_dict = rev_content_label_dict
 )
 
-model_name = "Model_1"
+''' Start the Training of the data '''
+# Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
-
-
 model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
 model.train((train_X_field, train_X_content), train_Y, batch_size, 100, checkpoint_factor, model_path, model_name)
