@@ -1,0 +1,8 @@
+embeddings {
+  tensor_name: "Input_Embedder/field_embedding_matrix:0"
+  metadata_path: "../Metadata/fields.vocab"
+}
+embeddings {
+  tensor_name: "Unified_Vocabulary_Matrix/content_label_embedding_matrix:0"
+  metadata_path: "../Metadata/content_labels.vocab"
+}
