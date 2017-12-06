@@ -21,6 +21,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
     print("Building the graph ... ")
     with graph.as_default():
 
+
         # ========================================================================
         # | Step 1:
         # ========================================================================
@@ -49,8 +50,6 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
         print("\tplaceholder for the label_encodings: ", tf_label_encodings)
         print("\tplaceholder for the input_sequence_lengths: ", tf_input_seqs_lengths)
         print("\tplaceholder for the label_sequence_lengths: ", tf_label_seqs_lengths)
-
-
 
 
         # ========================================================================
@@ -170,9 +169,9 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 h_trans_query_matrices = tf.expand_dims(tf.transpose(h_trans_query_vectors), axis=-1)
                 hidden_attention_values = tf.matmul(encoded_input, h_trans_query_matrices)
 
-                # Don't use the squeeze operation! that will cause the loss of shape information
-                field_attention_values = field_attention_values[:, :, 0] # drop the last dimension (1 sized)
-                hidden_attention_values = hidden_attention_values[:, :, 0] # same for this one
+                # drop the last dimension (1 sized)
+                field_attention_values = tf.squeeze(field_attention_values, axis=[-1])
+                hidden_attention_values = tf.squeeze(hidden_attention_values, axis=[-1])
 
                 # return the element wise multiplied values followed by softmax
                 return tf.nn.softmax(field_attention_values * hidden_attention_values, name="softmax")
@@ -439,6 +438,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
             inf_outputs = decode(tf_label_embedded[:, 0, :])
 
         print("\tInference outputs: ", inf_outputs)
+
 
         # ========================================================================
         # | Step _:

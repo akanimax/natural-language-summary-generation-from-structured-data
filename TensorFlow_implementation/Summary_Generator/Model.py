@@ -54,8 +54,8 @@ class Model:
         embedding_content_label.tensor_name = self.content_label_embedding_matrix.name
 
         # add the metadata paths to these embedding_summaries:
-        embedding_field.metadata_path = os.path.join(path, "..", "Metadata/fields.vocab")
-        embedding_content_label.metadata_path = os.path.join(path, "..", "Metadata/content_labels.vocab")
+        embedding_field.metadata_path = os.path.join("..", "Metadata/fields.vocab")
+        embedding_content_label.metadata_path = os.path.join("..", "Metadata/content_labels.vocab")
 
         # save the configuration file for this
         projector.visualize_embeddings(tensorboard_writer, conf)
