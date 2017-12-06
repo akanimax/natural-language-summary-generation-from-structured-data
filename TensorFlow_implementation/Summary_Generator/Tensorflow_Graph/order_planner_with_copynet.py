@@ -278,7 +278,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                # These weights need to be initialized to very small values so that they don't over_power the
                # LSTM outputs
                W_copy = tf.get_variable("copy_matrix",dtype=tf.float32,
-                                 initializer=tf.random_uniform_initializer(minval=-1e-3, maxval=1e-3, seed=seed_value),
+                                 initializer=tf.truncated_normal_initializer(seed=seed_value),
                                  shape = (hidden_state_size, hidden_state_size))
 
                # define the summary ops for the defined weights and biases
