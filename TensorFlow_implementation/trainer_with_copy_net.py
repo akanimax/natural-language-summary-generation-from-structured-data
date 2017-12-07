@@ -43,6 +43,9 @@ checkpoint_factor = 10
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
 
+# using a different learning_rate
+learning_rate = 3e-6
+
 # Embeddings size:
 field_embedding_size = 100
 content_label_embedding_size = 400 # This is a much bigger vocabulary compared to the field_name's vocabulary
