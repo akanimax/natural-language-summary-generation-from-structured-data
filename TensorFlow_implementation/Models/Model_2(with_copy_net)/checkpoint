@@ -1,0 +1,4 @@
+model_checkpoint_path: "Model_2(with_copy_net)-300"
+all_model_checkpoint_paths: "Model_2(with_copy_net)-240"
+all_model_checkpoint_paths: "Model_2(with_copy_net)-270"
+all_model_checkpoint_paths: "Model_2(with_copy_net)-300"
