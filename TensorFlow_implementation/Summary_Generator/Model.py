@@ -104,14 +104,6 @@ class Model:
         # Setup a tensorboard_writer:
         tensorboard_writer = self.__get_tensorboard_writer(model_save_path)
 
-        # setup the data for training:
-        # obtain the padded training data:
-        train_X_field = X[0]; train_X_content = X[1]
-        train_Y = Y; no_of_total_examples = len(train_X_field)
-
-        # print len(train_X_field), len(train_X_content), len(train_Y)
-        assert len(train_X_field) == len(train_X_content) and len(train_X_field) == len(train_Y), "input data lengths incompatible"
-
         ''' Start the actual Training loop: '''
         print("\n\nStarting the Training ... ")
         with tf.Session(graph=self.graph) as sess:
@@ -119,22 +111,43 @@ class Model:
             saver = tf.train.Saver(max_to_keep=3)
 
             # If old weights found, restart the training from there:
-            if(os.path.isfile(os.path.join(model_save_path, "checkpoint"))):
+            checkpoint_file = os.path.join(model_save_path, "checkpoint")
+            if(os.path.isfile(checkpoint_file)):
                 # load the saved weights:
                 saver.restore(sess, tf.train.latest_checkpoint(model_save_path))
+
+                # load the global_step value from the checkpoint file
+                with open(checkpoint_file, 'r') as checkpoint:
+                    path = checkpoint.readline().strip()
+                    global_step = int((path.split(':')[1]).split('-')[1][:-1])
 
             # otherwise initialize all the weights
             else:
                 sess.run(self.init)
 
-            # print("uninitialized variables:")
-            # print(sess.run(tf.report_uninitialized_variables()))
-            global_step = 0
+                # set the global_step to 0
+                global_step = 0
+
+            print("global_step: ", global_step)
 
             # run a loop for no_of_epochs iterations:
             for epoch in range(no_of_epochs):
                 print("------------------------------------------------------------------------------------------------------------")
                 print("current_epoch: ", (epoch + 1))
+
+                # perform random shuffling on the training data:
+                X, Y = synch_random_shuffle_non_np(zip(X[0], X[1]), Y)
+
+                # unzip the shuffled X:
+                X = zip(*X)
+
+                # setup the data for training:
+                # obtain the padded training data:
+                train_X_field = X[0]; train_X_content = X[1]
+                train_Y = Y; no_of_total_examples = len(train_X_field)
+
+                # print len(train_X_field), len(train_X_content), len(train_Y)
+                assert len(train_X_field) == len(train_X_content) and len(train_X_field) == len(train_Y), "input data lengths incompatible"
 
                 # Iterate over the batches of the given train data:
                 for batch_no in range(int(np.ceil(float(no_of_total_examples) / batch_size))):
