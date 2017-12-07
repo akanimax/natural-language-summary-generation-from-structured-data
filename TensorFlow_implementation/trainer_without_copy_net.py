@@ -38,7 +38,7 @@ model_name = "Model_1(without_copy_net)"
 '''
 # constants for this script
 train_percentage = 90
-batch_size = 4
+batch_size = 3
 checkpoint_factor = 10
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.

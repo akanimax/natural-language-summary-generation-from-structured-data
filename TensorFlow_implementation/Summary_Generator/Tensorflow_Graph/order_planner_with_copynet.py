@@ -360,8 +360,8 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                         # assign the stub_aggregator it's initial value.
                         stub_aggregator = tf.assign(stub_aggregator, stub_aggregator.initial_value)
 
-                        # manually assign zeros to the variable
-                        tf.assign(stub_aggregator, tf.zeros(shape=(content_label_vocab_size)))
+                        # # manually assign zeros to the variable
+                        # tf.assign(stub_aggregator, tf.zeros(shape=(content_label_vocab_size)))
                         final_output = tf.scatter_add(
                             # This reference must not be added to the optimizer's backpropagation ops
                             # so turn the trainable property off.
