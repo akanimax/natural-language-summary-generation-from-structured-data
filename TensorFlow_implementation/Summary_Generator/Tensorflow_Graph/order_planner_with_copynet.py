@@ -208,7 +208,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
 
                 return tf.nn.softmax(tf.reduce_sum(tf.expand_dims(prev_attention_vectors, axis = -1) *
-                                                   matrix_relevant_values, axis=1),name="softmax")
+                                                   matrix_relevant_values, axis=-1),name="softmax")
 
 
         print("**step 4.3: defining the hybrid attention")
@@ -353,11 +353,20 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
                         # Use the gather and the scatter_add mechanism to obtain the final s_t^copy vector
                         out_value_list = tf.gather(current_copy_score_vector, true_content_index)
+
+                        # define a stub variable
+                        stub_aggregator = tf.Variable(lambda: tf.zeros(shape=(content_label_vocab_size)),
+                                                        trainable=False, dtype=tf.float32)
+                        # assign the stub_aggregator it's initial value.
+                        stub_aggregator = tf.assign(stub_aggregator, stub_aggregator.initial_value)
+
+                        # manually assign zeros to the variable
+                        tf.assign(stub_aggregator, tf.zeros(shape=(content_label_vocab_size)))
                         final_output = tf.scatter_add(
                             # This reference must not be added to the optimizer's backpropagation ops
                             # so turn the trainable property off.
                             # Also, since the initial_value is a lambda, the dtype has to be explicitly mentioned
-                            tf.Variable(lambda: tf.zeros(shape=(content_label_vocab_size)), trainable=False, dtype=tf.float32),
+                            stub_aggregator,
                             output_level_index, out_value_list)
 
                         #################################

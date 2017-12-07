@@ -207,7 +207,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
 
 
                 return tf.nn.softmax(tf.reduce_sum(tf.expand_dims(prev_attention_vectors, axis = -1) *
-                                                   matrix_relevant_values, axis=1),name="softmax")
+                                                   matrix_relevant_values, axis=-1),name="softmax")
 
 
         print("**step 4.3: defining the hybrid attention")
