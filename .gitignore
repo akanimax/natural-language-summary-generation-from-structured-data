@@ -99,6 +99,3 @@ ENV/
 
 # mypy
 .mypy_cache/
-
-# ignore the Data folder:
-Data/
