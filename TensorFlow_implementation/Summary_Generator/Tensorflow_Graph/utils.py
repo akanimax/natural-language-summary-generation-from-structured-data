@@ -5,8 +5,6 @@
 
 import numpy as np
 
-<<<<<<< HEAD
-=======
 # Obtain the sequence lengths for the given input field_encodings / content_encodings (To feed to the RNN encoder)
 def get_lengths(sequences):
     '''
@@ -20,7 +18,6 @@ def get_lengths(sequences):
     '''
     return map(lambda x: len(x), sequences)
 
->>>>>>> Animesh
 
 def pad_sequences(seqs, pad_value = 0):
     '''
@@ -45,8 +42,6 @@ def pad_sequences(seqs, pad_value = 0):
 
     # return the padded seqs tensor
     return np.array(padded_seqs)
-<<<<<<< HEAD
-=======
 
 
 
@@ -96,4 +91,4 @@ def split_train_dev(X, Y, train_percentage):
 
     # return the constructed sets
     return train_X, train_Y, test_X, test_Y
->>>>>>> Animesh
+

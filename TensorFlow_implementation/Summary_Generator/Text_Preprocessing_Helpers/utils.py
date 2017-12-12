@@ -7,10 +7,7 @@ import re
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 import numpy as np
-<<<<<<< HEAD
-=======
 import os # for the metadata file creator function
->>>>>>> Animesh
 
 def prepare_input_data(table_file_path):
     '''
@@ -149,8 +146,6 @@ def group_tokenized_sequences(flat_seq, lengths):
 
     # finally return the so created lists
     return grouped_seqs
-<<<<<<< HEAD
-=======
 
 
 # create a function to generate a file for the given dictionary in the .vocab format
@@ -174,4 +169,4 @@ def create_dot_vocab(save_dict, path):
                 metadatat_file.write(value + "\n")
         # print a message that the file has been generated after completion
         print("The file has been created at: ", path)
->>>>>>> Animesh
+
