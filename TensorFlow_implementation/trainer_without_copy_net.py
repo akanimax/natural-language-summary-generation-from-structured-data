@@ -37,11 +37,15 @@ model_name = "Model_1(without_copy_net)"
 	=========================================================================================================
 '''
 # constants for this script
-train_percentage = 90
-batch_size = 4
-checkpoint_factor = 10
+no_of_epochs = 500
+train_percentage = 99
+batch_size = 16
+checkpoint_factor = 100
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
+
+# Memory usage fraction:
+gpu_memory_usage_fraction = 0.2
 
 # Embeddings size:
 field_embedding_size = 100
@@ -59,6 +63,7 @@ lstm_cell_state_size = hidden_state_size = 500 # they are same (for now)
 
 ''' Extract and setup the data '''
 # Obtain the data:
+print("unpickling the data from the disc ...")
 data = unPickleIt(plug_and_play_data_file)
 
 field_encodings = data['field_encodings']
@@ -112,4 +117,4 @@ graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 # Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
 model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
-model.train((train_X_field, train_X_content), train_Y, batch_size, 100, checkpoint_factor, model_path, model_name)
+model.debug_train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)

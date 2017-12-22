@@ -4,3 +4,6 @@ wikipedia-biography-dataset/
 *.nb
 *.sent
 *.box
+
+# ignore the pickle files
+*.pickle

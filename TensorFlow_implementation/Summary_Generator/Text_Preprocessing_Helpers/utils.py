@@ -2,7 +2,9 @@
     Library of helper tools for preprocessing and converting the text data into
     compatible tensors
 '''
+
 # import all the required stuff
+from __future__ import print_function
 import re
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -87,37 +89,60 @@ def prepare_input_labels(nb_file_path, sent_file_path):
 
 
 
-def prepare_tokenizer(words):
+def prepare_tokenizer(words, max_word_length = None):
     '''
         funtion to generate vocabulary of the given list of words
         implemented by Anindya
         @param
         words => the list of words to be tokenized
     '''
+    # flatten the words list:
+    print("flattening the words into a single sequence ... ")
+    flat_words = []; # initialize to empty list
+    for i in range(len(words)):
+        flat_words += words[i]
+        if(i % 10000 == 0):
+            print("joined", i, "examples")
+
     # obtain a tokenizer
-    t = Tokenizer(filters = '') # don't let keras ignore any words
-    t.fit_on_texts(words)
+    print("\nmaximum words to work with: ", max_word_length)
+    t = Tokenizer(num_words = max_word_length, filters = '') # don't let keras ignore any words
+    print("\nKeras's tokenizer kicks off ... ")
+    t.fit_on_texts(flat_words)
     field_dict = dict(); rev_field_dict = dict()
 
-    for key,value in t.word_index.items():
-        field_dict[value] = key
-        rev_field_dict[key] = value
+    print("\nbuilding the dict and the rev_dict ... ")
+    if(max_word_length is not None):
+        vals = t.word_index.items()
+        vals.sort(key=lambda x: x[1])
+        for key,value in vals[:max_word_length - 1]:
+            field_dict[value] = key
+            rev_field_dict[key] = value
+    else: 
+        for key,value in t.word_index.items():
+            field_dict[value] = key
+            rev_field_dict[key] = value
 
-    vocab_size = len(t.word_index) + 1
 
     ''' Small modification from Animesh
         # also add the '<unk>' token to the dictionary at 0th position
     '''
     field_dict[0] = '<unk>'; rev_field_dict['<unk>'] = 0
 
-    #print (vocab_size)
-	# integer encode the documents
-    encoded_docs = t.texts_to_sequences(words)
+   
+    print("\nencoding the words using the dictionary ... ")
+    for i in range(len(words)):
+        for j in range(len(words[i])):
+            if(words[i][j] in rev_field_dict):
+                words[i][j] = rev_field_dict[words[i][j]]
+            else:
+                words[i][j] = rev_field_dict['<unk>']
+        
+        if(i % 10000 == 0):
+            print("encoded", i, "examples")
 
-    # print "debug: " + str(encoded_docs)
-
-	#print(padded_docs)
-    return np.array(encoded_docs), field_dict, rev_field_dict, vocab_size
+    vocab_size = len(field_dict)
+    return words, field_dict, rev_field_dict, vocab_size
 
 
 def group_tokenized_sequences(flat_seq, lengths):

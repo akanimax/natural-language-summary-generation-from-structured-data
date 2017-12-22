@@ -14,6 +14,10 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
         Function for building the graph for model 1:
         The architecture is same as defined in the base paper, except the copynet part
     '''
+
+    # reset the current graph in the session
+    tf.reset_default_graph()
+
     graph = tf.Graph() # create a new graph object
 
     # define all the graph computations using the as_default function

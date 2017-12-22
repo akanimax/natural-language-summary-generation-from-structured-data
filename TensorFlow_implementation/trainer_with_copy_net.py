@@ -37,14 +37,19 @@ model_name = "Model_2(with_copy_net)"
 	=========================================================================================================
 '''
 # constants for this script
-train_percentage = 90
+train_percentage = 99
 batch_size = 4
-checkpoint_factor = 10
+checkpoint_factor = 100
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
 
+# Memory usage fraction:
+gpu_memory_usage_fraction = 0.2
+
+no_of_epochs = 500
+
 # Embeddings size:
-field_embedding_size = 100
+field_embedding_size = 200
 content_label_embedding_size = 400 # This is a much bigger vocabulary compared to the field_name's vocabulary
 
 # LSTM hidden state sizes
@@ -57,7 +62,8 @@ lstm_cell_state_size = hidden_state_size = 500 # they are same (for now)
 
 
 ''' Extract and setup the data '''
-# Obtain the data:
+# Obtain the data:\
+print("Unpickling the data from the disc ...")
 data = unPickleIt(plug_and_play_data_file)
 
 field_encodings = data['field_encodings']
@@ -82,7 +88,7 @@ train_X_field = list(train_X_field); train_X_content = list(train_X_content)
 
 # Free up the resources by deleting non required stuff
 del X, Y, field_encodings, content_encodings, train_X
-
+print("\nTotal_training_examples:", len(train_X_field))
 
 
 
@@ -110,4 +116,4 @@ graph, interface_dict = order_planner_with_copynet.get_computation_graph (
 # Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
 model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
-model.train((train_X_field, train_X_content), train_Y, batch_size, 100, checkpoint_factor, model_path, model_name)
+model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction, debug=True)

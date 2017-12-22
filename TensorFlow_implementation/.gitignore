@@ -1,0 +1,5 @@
+# ignore the pickle files
+*.pickle
+
+# ignore the Models directory
+Models/

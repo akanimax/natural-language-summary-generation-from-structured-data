@@ -8,6 +8,7 @@ from tensorflow.contrib.tensorboard.plugins import projector
 from Tensorflow_Graph.utils import *
 import os
 import numpy as np
+from tensorflow.python import debug as tf_debug
 
 # define the class for the Model
 class Model:
@@ -20,12 +21,12 @@ class Model:
         # setup the optimizer with the graph
         with self.graph.as_default():
             # define the optimizer for this task:
-        	with tf.variable_scope("Trainer"):
-        	    # define the train_step for this:
-        	    self.train_step = self.optimizer.minimize(self.loss)
+            with tf.variable_scope("Trainer"):
+                # define the train_step for this:
+                self.train_step = self.optimizer.minimize(self.loss)
 
-        	with tf.variable_scope("Init"):
-        		self.init = tf.global_variables_initializer()
+            with tf.variable_scope("Init"):
+                self.init = tf.global_variables_initializer()
 
     def __setup_graph(self):
         # print all the trainable variables for this graph
@@ -97,7 +98,7 @@ class Model:
         self.__setup_graph()
 
     # function for training the graph
-    def train(self, X, Y, batch_size, no_of_epochs, checkpoint_factor, model_save_path, model_name):
+    def train(self, X, Y, batch_size, no_of_epochs, checkpoint_factor, model_save_path, model_name, mem_fraction=0.5):
         '''
             The training_function for the model.
         '''
@@ -114,22 +115,41 @@ class Model:
 
         ''' Start the actual Training loop: '''
         print("\n\nStarting the Training ... ")
-        with tf.Session(graph=self.graph) as sess:
+
+        # use the given memory usage fraction for this training process
+        tensor_config = tf.ConfigProto(log_device_placement=True)
+        tensor_config.gpu_options.allow_growth = False
+        tensor_config.gpu_options.per_process_gpu_memory_fraction = mem_fraction
+
+        print("tensorflow configuration user:", tensor_config)
+        print("gpu memory fraction used:", mem_fraction)
+
+        with tf.Session(config=tensor_config, graph=self.graph) as sess:
             # create a saver object:
             saver = tf.train.Saver(max_to_keep=3)
 
+            # create the checkpoint file:
+            checkpoint_file = os.path.join(model_save_path, "checkpoint")
+
             # If old weights found, restart the training from there:
-            if(os.path.isfile(os.path.join(model_save_path, "checkpoint"))):
+            if(os.path.isfile(checkpoint_file)):
                 # load the saved weights:
                 saver.restore(sess, tf.train.latest_checkpoint(model_save_path))
 
+                # load the global_step value from the checkpoint file
+                with open(checkpoint_file, 'r') as checkpoint:
+                    path = checkpoint.readline().strip()
+                    global_step = int((path.split(':')[1]).split('-')[1][:-1])
+
+
             # otherwise initialize all the weights
             else:
+                global_step = 0
                 sess.run(self.init)
+
 
             # print("uninitialized variables:")
             # print(sess.run(tf.report_uninitialized_variables()))
-            global_step = 0
 
             # run a loop for no_of_epochs iterations:
             for epoch in range(no_of_epochs):
@@ -161,9 +181,131 @@ class Model:
                         self.lab_sequence_lengths: lab_lengths
                     })
                     print "Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost
+
+                    if((global_step + 1) % checkpoint_factor == 0 or global_step == 0):
+                        # generate the summary for this batch:
+                        sums, predicts = sess.run([self.all_summaries, self.outputs], feed_dict = {
+                            self.inp_field_encodings: inp_field,
+                            self.inp_content_encodings: inp_conte,
+                            self.inp_label_encodings: inp_label,
+                            self.inp_sequence_lengths: inp_lengths,
+                            self.lab_sequence_lengths: lab_lengths
+                        })
+
+                        # save this generated summary to the summary file
+                        tensorboard_writer.add_summary(sums, global_step=global_step)
+
+                        # also save the model
+                        saver.save(sess, os.path.join(model_save_path, model_name), global_step=global_step)
+
+                        # print a random sample from this batch:
+                        random_index = np.random.randint(len(inp_field))
+
+                        random_label_sample = inp_label[random_index]
+                        random_predicts_sample = np.argmax(predicts, axis = -1)[random_index]
+
+                        # print the extracted sample in meaningful format
+                        print("\nOriginal Summary: ")
+                        print([self.content_label_vocabulary[label] for label in random_label_sample])
+
+                        print("\nPredicted Summary: ")
+                        print([self.content_label_vocabulary[label] for label in random_predicts_sample])
                     global_step += 1
 
-            	if((epoch + 1) % checkpoint_factor == 0 or epoch == 0):
+                print("------------------------------------------------------------------------------------------------------------")
+        print("Training complete ...\n\n")
+
+
+    # function for debugging the training process for the graph
+    def debug_train(self, X, Y, batch_size, no_of_epochs, checkpoint_factor, model_save_path, model_name, mem_fraction=0.5):
+        '''
+            The training_function for the model.
+        '''
+        # Setup a tensorboard_writer:
+        tensorboard_writer = self.__get_tensorboard_writer(model_save_path)
+
+        # setup the data for training:
+        # obtain the padded training data:
+        train_X_field = X[0]; train_X_content = X[1]
+        train_Y = Y; no_of_total_examples = len(train_X_field)
+
+        # print len(train_X_field), len(train_X_content), len(train_Y)
+        assert len(train_X_field) == len(train_X_content) and len(train_X_field) == len(train_Y), "input data lengths incompatible"
+
+        ''' Start the actual Training loop: '''
+        print("\n\nStarting the Training ... ")
+
+        # use the given memory usage fraction for this training process
+        tensor_config = tf.ConfigProto(log_device_placement=True)
+        tensor_config.gpu_options.allow_growth = False
+        tensor_config.gpu_options.per_process_gpu_memory_fraction = mem_fraction
+
+        print("tensorflow configuration user:", tensor_config)
+        print("gpu memory fraction used:", mem_fraction)
+
+
+        sess = tf.InteractiveSession(graph=self.graph)
+
+        # start the debugging mode
+        sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+
+        # create a saver object:
+        saver = tf.train.Saver(max_to_keep=3)
+
+        # create the checkpoint file:
+        checkpoint_file = os.path.join(model_save_path, "checkpoint")
+
+        # If old weights found, restart the training from there:
+        if(os.path.isfile(checkpoint_file)):
+            # load the saved weights:
+            saver.restore(sess, tf.train.latest_checkpoint(model_save_path))
+
+            # load the global_step value from the checkpoint file
+            with open(checkpoint_file, 'r') as checkpoint:
+                path = checkpoint.readline().strip()
+                global_step = int((path.split(':')[1]).split('-')[1][:-1])
+
+
+        # otherwise initialize all the weights
+        else:
+            global_step = 0
+            sess.run(self.init)
+
+        # print("uninitialized variables:")
+        # print(sess.run(tf.report_uninitialized_variables()))
+
+        # run a loop for no_of_epochs iterations:
+        for epoch in range(no_of_epochs):
+            print("------------------------------------------------------------------------------------------------------------")
+            print("current_epoch: ", (epoch + 1))
+
+            # Iterate over the batches of the given train data:
+            for batch_no in range(int(np.ceil(float(no_of_total_examples) / batch_size))):
+                # obtain the current batch of data:
+                start = (batch_no * batch_size); end = start + batch_size
+                batch_inp_field = train_X_field[start: end]
+                batch_inp_conte = train_X_content[start: end]
+                batch_inp_label = train_Y[start: end]
+                # pad the current batch of data:
+                inp_field = pad_sequences(batch_inp_field)
+                inp_conte = pad_sequences(batch_inp_conte)
+                inp_label = pad_sequences(batch_inp_label)
+                # extract the sequence lengths of examples in this batch
+                inp_lengths = get_lengths(batch_inp_field)
+                lab_lengths = get_lengths(batch_inp_label)
+
+
+                # execute the cost and the train_step
+                _, cost = sess.run([self.train_step, self.loss], feed_dict = {
+                    self.inp_field_encodings: inp_field,
+                    self.inp_content_encodings: inp_conte,
+                    self.inp_label_encodings: inp_label,
+                    self.inp_sequence_lengths: inp_lengths,
+                    self.lab_sequence_lengths: lab_lengths
+                })
+                print "Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost
+
+                if((global_step + 1) % checkpoint_factor == 0 or global_step == 0):
                     # generate the summary for this batch:
                     sums, predicts = sess.run([self.all_summaries, self.outputs], feed_dict = {
                         self.inp_field_encodings: inp_field,
@@ -191,6 +333,7 @@ class Model:
 
                     print("\nPredicted Summary: ")
                     print([self.content_label_vocabulary[label] for label in random_predicts_sample])
+                global_step += 1
 
-                print("------------------------------------------------------------------------------------------------------------")
+            print("------------------------------------------------------------------------------------------------------------")
         print("Training complete ...\n\n")
