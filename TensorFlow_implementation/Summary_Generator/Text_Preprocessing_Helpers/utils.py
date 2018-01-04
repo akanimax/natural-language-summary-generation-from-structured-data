@@ -114,11 +114,11 @@ def prepare_tokenizer(words, max_word_length = None):
     print("\nbuilding the dict and the rev_dict ... ")
     if(max_word_length is not None):
         vals = t.word_index.items()
-        vals.sort(key=lambda x: x[1])
+        vals = sorted(vals, key=lambda x: x[1])
         for key,value in vals[:max_word_length - 1]:
             field_dict[value] = key
             rev_field_dict[key] = value
-    else: 
+    else:
         for key,value in t.word_index.items():
             field_dict[value] = key
             rev_field_dict[key] = value
@@ -129,7 +129,7 @@ def prepare_tokenizer(words, max_word_length = None):
     '''
     field_dict[0] = '<unk>'; rev_field_dict['<unk>'] = 0
 
-   
+
     print("\nencoding the words using the dictionary ... ")
     for i in range(len(words)):
         for j in range(len(words[i])):
@@ -137,7 +137,7 @@ def prepare_tokenizer(words, max_word_length = None):
                 words[i][j] = rev_field_dict[words[i][j]]
             else:
                 words[i][j] = rev_field_dict['<unk>']
-        
+
         if(i % 10000 == 0):
             print("encoded", i, "examples")
 
@@ -194,4 +194,3 @@ def create_dot_vocab(save_dict, path):
                 metadatat_file.write(value + "\n")
         # print a message that the file has been generated after completion
         print("The file has been created at: ", path)
-

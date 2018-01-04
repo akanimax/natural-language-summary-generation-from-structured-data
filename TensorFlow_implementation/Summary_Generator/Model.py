@@ -2,13 +2,19 @@
     An OO implementation of the Model Object that composes with a Tensorflow_Graph and Optimizer
     to Train the network and eventually use the trained weights for predictions during the inference
 '''
+from __future__ import print_function
+from __future__ import absolute_import
 
 import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
-from Tensorflow_Graph.utils import *
+from Summary_Generator.Tensorflow_Graph.utils import *
 import os
 import numpy as np
 from tensorflow.python import debug as tf_debug
+
+# for bleu score calculation ->
+from seq2seq.metrics.bleu import moses_multi_bleu
+from functools import reduce
 
 # define the class for the Model
 class Model:
@@ -117,7 +123,7 @@ class Model:
         print("\n\nStarting the Training ... ")
 
         # use the given memory usage fraction for this training process
-        tensor_config = tf.ConfigProto(log_device_placement=True)
+        tensor_config = tf.ConfigProto()
         tensor_config.gpu_options.allow_growth = False
         tensor_config.gpu_options.per_process_gpu_memory_fraction = mem_fraction
 
@@ -180,7 +186,7 @@ class Model:
                         self.inp_sequence_lengths: inp_lengths,
                         self.lab_sequence_lengths: lab_lengths
                     })
-                    print "Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost
+                    print("Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost)
 
                     if((global_step + 1) % checkpoint_factor == 0 or global_step == 0):
                         # generate the summary for this batch:
@@ -204,12 +210,21 @@ class Model:
                         random_label_sample = inp_label[random_index]
                         random_predicts_sample = np.argmax(predicts, axis = -1)[random_index]
 
+                        hypotheses = reduce(lambda x,y: x + " " + y,
+                                                      [self.content_label_vocabulary[label] for label in random_predicts_sample])
+                        references = reduce(lambda x,y: x + " " + y,
+                                                      [self.content_label_vocabulary[label] for label in random_label_sample])
+
                         # print the extracted sample in meaningful format
                         print("\nOriginal Summary: ")
-                        print([self.content_label_vocabulary[label] for label in random_label_sample])
+                        print(references)
 
                         print("\nPredicted Summary: ")
-                        print([self.content_label_vocabulary[label] for label in random_predicts_sample])
+                        print(hypotheses)
+
+                        # calculate the Bleu score
+                        print("\nCalculating the Blue score ...")
+                        print("Bleu_Score =", moses_multi_bleu(np.array([hypotheses]), np.array([references])))
                     global_step += 1
 
                 print("------------------------------------------------------------------------------------------------------------")
@@ -303,7 +318,7 @@ class Model:
                     self.inp_sequence_lengths: inp_lengths,
                     self.lab_sequence_lengths: lab_lengths
                 })
-                print "Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost
+                print("Range: ", "[", start, "-", (start + len(inp_field)), "]", " Cost: ", cost)
 
                 if((global_step + 1) % checkpoint_factor == 0 or global_step == 0):
                     # generate the summary for this batch:

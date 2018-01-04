@@ -81,7 +81,7 @@ field_vocab_size = data['field_vocab_size']
 content_label_vocab_size = data['content_label_vocab_size']
 
 
-X, Y = synch_random_shuffle_non_np(zip(field_encodings, content_encodings), label_encodings)
+X, Y = synch_random_shuffle_non_np(list(zip(field_encodings, content_encodings)), label_encodings)
 
 train_X, train_Y, dev_X, dev_Y = split_train_dev(X, Y, train_percentage)
 train_X_field, train_X_content = zip(*train_X)
@@ -120,4 +120,4 @@ model_path = os.path.join(base_model_path, model_name)
 model = Model(graph, interface_dict, tf.train.MomentumOptimizer(learning_rate, momentum), field_dict, content_label_dict)
 #model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate, momentum), field_dict, content_label_dict)
 #model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)
-model.debug_train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)
+model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)

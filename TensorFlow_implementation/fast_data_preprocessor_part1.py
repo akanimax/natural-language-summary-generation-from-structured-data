@@ -74,8 +74,9 @@ print(label_words[: 3])
 # now perfrom the map_reduce operation to receive the a data structure similar to the field_names and content_words
 print("grouping lines in train.sent according to the train.nb ... ")
 count = 0; label_sentences = [] # initialize to empty list
+
 for length in lab_lengths:
-    temp = []; cnt = 0; 
+    temp = []; cnt = 0;
     while(cnt < int(length)):
         sent = label_words.pop(0)        
         # print("sent", sent)

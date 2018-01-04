@@ -16,7 +16,7 @@ def get_lengths(sequences):
         @return
         lengths = [1d] list containing the lengths of the sequences
     '''
-    return map(lambda x: len(x), sequences)
+    return list(map(lambda x: len(x), sequences))
 
 
 def pad_sequences(seqs, pad_value = 0):
@@ -54,7 +54,7 @@ def synch_random_shuffle_non_np(X, Y):
         X, Y => The data to be shuffled
         @return => The shuffled data
     '''
-    combined = zip(X, Y)
+    combined = list(zip(X, Y))
 
     # shuffle the combined list in place
     np.random.shuffle(combined)
@@ -91,4 +91,3 @@ def split_train_dev(X, Y, train_percentage):
 
     # return the constructed sets
     return train_X, train_Y, test_X, test_Y
-
