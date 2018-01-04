@@ -1,4 +1,6 @@
-import cPickle as pickle # for pickling the data
+from __future__ import print_function
+
+import _pickle as pickle # pickle module in python
 import os # for path related operations
 
 '''
@@ -21,12 +23,12 @@ def pickleIt(obj, save_path):
     '''
     if(not os.path.isfile(save_path)):
         with open(save_path, 'wb') as dumping:
-            pickle.dump(obj, dumping, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(obj, dumping)
 
-        print "The file has been pickled at: " + save_path
+        print("The file has been pickled at:", save_path)
 
     else:
-        print "The pickle file already exists: " + save_path
+        print("The pickle file already exists: ", save_path)
 
 
 # function to unpickle the given file and load the obj back into the python environment

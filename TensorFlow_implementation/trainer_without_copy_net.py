@@ -38,9 +38,9 @@ model_name = "Model_1(without_copy_net)"
 '''
 # constants for this script
 no_of_epochs = 500
-train_percentage = 99
-batch_size = 16
-checkpoint_factor = 100
+train_percentage = 100
+batch_size = 5
+checkpoint_factor = 10
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
 
@@ -80,7 +80,7 @@ field_vocab_size = data['field_vocab_size']
 content_label_vocab_size = data['content_label_vocab_size']
 
 
-X, Y = synch_random_shuffle_non_np(zip(field_encodings, content_encodings), label_encodings)
+X, Y = synch_random_shuffle_non_np(list(zip(field_encodings, content_encodings)), label_encodings)
 
 train_X, train_Y, dev_X, dev_Y = split_train_dev(X, Y, train_percentage)
 train_X_field, train_X_content = zip(*train_X)
@@ -117,4 +117,4 @@ graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 # Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
 model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
-model.debug_train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)
+model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)
