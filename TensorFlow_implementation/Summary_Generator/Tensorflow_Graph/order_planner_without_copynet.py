@@ -177,8 +177,12 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 field_attention_values = tf.squeeze(field_attention_values, axis=[-1])
                 hidden_attention_values = tf.squeeze(hidden_attention_values, axis=[-1])
 
+
+                # free up non_required resources:
+                ret_value = tf.nn.softmax(field_attention_values * hidden_attention_values, name="softmax")
+
                 # return the element wise multiplied values followed by softmax
-                return tf.nn.softmax(field_attention_values * hidden_attention_values, name="softmax")
+                return ret_value
 
 
         print("**step 4.2: defining the link based attention")
@@ -189,9 +193,9 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                 to debug it.
             '''
             Link_Matrix = tf.get_variable("Link_Attention_Matrix", shape=(field_vocab_size, field_vocab_size),
-                    dtype=tf.float32, initializer=tf.truncated_normal_initializer(mean=0.5, stddev=0.5, seed=seed_value))
+                    dtype=tf.float32, initializer=tf.random_normal_initializer(mean=0.5, stddev=0.5, seed=seed_value))
 
-            Link_Matrix_summary = tf.summary.histogram("Link_based_attention", Link_Matrix)
+            # Link_Matrix_summary = tf.summary.histogram("Link_based_attention", Link_Matrix)
 
         print("\tThe Link Matrix used for this attention: ", Link_Matrix)
 
@@ -386,7 +390,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
                         # The next_input is the x_t vector so calculated:
                         next_input = x_t
                         # The next loop_state is the current content_based attention
-                        next_loop_state = cont_attn
+                        next_loop_state = hybrid_attn
                         # The next_cell_state is going to be equal to the cell_state. (we_don't tweak it)
                         next_cell_state = cell_state
 

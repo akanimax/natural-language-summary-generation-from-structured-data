@@ -38,14 +38,15 @@ model_name = "Model_1(without_copy_net)"
 '''
 # constants for this script
 no_of_epochs = 500
-train_percentage = 99
-batch_size = 16
+train_percentage = 100
+batch_size = 8
 checkpoint_factor = 100
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
+momentum = 0.9
 
 # Memory usage fraction:
-gpu_memory_usage_fraction = 0.2
+gpu_memory_usage_fraction = 1
 
 # Embeddings size:
 field_embedding_size = 100
@@ -116,5 +117,7 @@ graph, interface_dict = order_planner_without_copynet.get_computation_graph (
 ''' Start the Training of the data '''
 # Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
-model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
+model = Model(graph, interface_dict, tf.train.MomentumOptimizer(learning_rate, momentum), field_dict, content_label_dict)
+#model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate, momentum), field_dict, content_label_dict)
+#model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)
 model.debug_train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)

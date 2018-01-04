@@ -11,7 +11,7 @@ from Summary_Generator.Text_Preprocessing_Helpers.utils import *
 temp_pickle_file_path = "temp.pickle"
 
 # set the limit on the samples to be trained on: 
-limit = 100000
+limit = 600000 # no limit for now
 
 # unpickle the object from this file
 print("unpickling the data ...")
@@ -45,7 +45,7 @@ unified_content_label_list = content_words + label_words
 
 # tokenize the unified_content_and_label_words:
 print("\n\nTokenizing the content and the label names ...")
-unified_sequences, content_label_dict, rev_content_label_dict, content_label_vocab_size = prepare_tokenizer(unified_content_label_list, max_word_length = 10000)
+unified_sequences, content_label_dict, rev_content_label_dict, content_label_vocab_size = prepare_tokenizer(unified_content_label_list, max_word_length = 20000)
 
 print("Encoded content_label_sequences:", unified_sequences[: 3])
 

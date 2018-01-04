@@ -79,7 +79,7 @@ def split_train_dev(X, Y, train_percentage):
         @return => train_X, train_Y, test_X, test_Y
     '''
     m_examples = len(X)
-    assert train_percentage < 100, "Train percentage cannot be greater than 100! NOOB!"
+    assert train_percentage <= 100, "Train percentage cannot be greater than 100! NOOB!"
     partition_point = int((m_examples * (float(train_percentage) / 100)) + 0.5) # 0.5 is added for rounding
 
     # construct the train_X, train_Y, test_X, test_Y sets:
