@@ -38,7 +38,7 @@ model_name = "Model_2(with_copy_net)"
 '''
 # constants for this script
 train_percentage = 99
-batch_size = 4
+batch_size = 2
 checkpoint_factor = 100
 learning_rate = 3e-4 # for learning rate -> https://twitter.com/karpathy/status/801621764144971776?lang=en
 # I know the tweet was a joke, but I have noticed that this learning rate works quite well.
@@ -116,4 +116,4 @@ graph, interface_dict = order_planner_with_copynet.get_computation_graph (
 # Create the model and start the training on it
 model_path = os.path.join(base_model_path, model_name)
 model = Model(graph, interface_dict, tf.train.AdamOptimizer(learning_rate), field_dict, content_label_dict)
-model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction, debug=True)
+model.train((train_X_field, train_X_content), train_Y, batch_size, no_of_epochs, checkpoint_factor, model_path, model_name, mem_fraction=gpu_memory_usage_fraction)

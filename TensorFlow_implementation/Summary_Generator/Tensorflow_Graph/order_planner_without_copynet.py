@@ -429,7 +429,7 @@ def get_computation_graph(seed_value, field_vocab_size, content_label_vocab_size
         # define the loss (objective) function for minimization
         with tf.variable_scope("Loss"):
             loss = tf.reduce_mean(
-                tf.nn.softmax_cross_entropy_with_logits(logits=outputs, labels=tf_one_hot_label_encodings))
+                tf.nn.softmax_cross_entropy_with_logits_v2(logits=outputs, labels=tf_one_hot_label_encodings))
 
             # record the loss summary:
             loss_summary = tf.summary.scalar("Objective_loss", loss)

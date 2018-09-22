@@ -60,7 +60,7 @@ def synch_random_shuffle_non_np(X, Y):
     np.random.shuffle(combined)
 
     # extract the data back from the combined list
-    X[:], Y[:] = zip(*combined)
+    X, Y = list(zip(*combined))
 
     # return the shuffled data:
     return X, Y
